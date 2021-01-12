@@ -10,6 +10,7 @@ public class Rover {
 	private String facing;
 	private Position position;
 	private Map<Order, Action> actions = new HashMap<>();
+	private Map<Position, Obstacle> obstacles = new HashMap<>();
 
 	public Rover(String facing, int x, int y) {
 		this.facing = facing;
@@ -28,6 +29,10 @@ public class Rover {
 		this.actions.put(Order.Right, ()-> this.heading = this.heading.turnRight());
 		this.actions.put(Order.Forward, ()-> this.position = this.position.forward(this.heading));
 		this.actions.put(Order.Backward, ()-> this.position = this.position.backward(this.heading));
+	}
+
+	public void addObstacle(Obstacle obstacle) {
+		obstacles.put(obstacle.getPosition(),obstacle);
 	}
 
 	public Heading heading(){
@@ -146,6 +151,19 @@ public class Rover {
 			return (this.ordinal() + offset + values().length) % values().length;
 		}
 
+	}
+
+	public static class Obstacle {
+
+		private final Position position;
+
+		public Obstacle(Position position) {
+			this.position = position;
+		}
+
+		public Position getPosition() {
+			return position;
+		}
 	}
 
 
