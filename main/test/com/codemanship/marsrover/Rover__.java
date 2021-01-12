@@ -89,20 +89,20 @@ public class Rover__ {
         assertThat(rover.heading()).isEqualTo(West);
         assertThat(rover.position()).isEqualTo(new Position(3,1));
         rover.go("RFRFF");
-        assertThat(rover.heading()).isEqualTo(West);
+        assertThat(rover.heading()).isEqualTo(East);
         assertThat(rover.position()).isEqualTo(new Position(5,2));
     }
 
     @Test
     public void could_not_move_backward_if_runs_into_an_obstacle(){
         Rover rover = new Rover(West, new Position(3, 1));
-        Rover.Obstacle obstacle = new Rover.Obstacle(new Position(4, 3));
+        Rover.Obstacle obstacle = new Rover.Obstacle(new Position(2, 3));
         rover.addObstacle(obstacle);
         rover.go("LBBLBB");
         assertThat(rover.heading()).isEqualTo(West);
         assertThat(rover.position()).isEqualTo(new Position(3,1));
         rover.go("LBLBB");
-        assertThat(rover.heading()).isEqualTo(West);
-        assertThat(rover.position()).isEqualTo(new Position(5,2));
+        assertThat(rover.heading()).isEqualTo(East);
+        assertThat(rover.position()).isEqualTo(new Position(1,2));
     }
 }

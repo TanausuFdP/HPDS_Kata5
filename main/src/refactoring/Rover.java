@@ -3,12 +3,15 @@ package refactoring;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public class Rover {
 	private Heading heading;
+	private Heading originalHeading;
 	private String facing;
 	private Position position;
+	private Position originalPosition;
 	private Map<Order, Action> actions = new HashMap<>();
 	private Map<Position, Obstacle> obstacles = new HashMap<>();
 
@@ -16,6 +19,8 @@ public class Rover {
 		this.facing = facing;
 		this.heading = Heading.of(facing);
 		this.position = new Position(x, y);
+		this.originalPosition = new Position(x, y);
+		this.originalHeading = Heading.of(facing);
 	}
 
 	public Rover(Heading heading, int x, int y) {
@@ -25,14 +30,26 @@ public class Rover {
 	public Rover(Heading heading, Position position) {
 		this.heading = heading;
 		this.position = position;
+		this.originalHeading = heading;
+		this.originalPosition = position;
 		this.actions.put(Order.Left, ()-> this.heading = this.heading.turnLeft());
 		this.actions.put(Order.Right, ()-> this.heading = this.heading.turnRight());
-		this.actions.put(Order.Forward, ()-> this.position = this.position.forward(this.heading));
-		this.actions.put(Order.Backward, ()-> this.position = this.position.backward(this.heading));
+		this.actions.put(Order.Forward, ()-> {
+			this.position = this.position.forward(this.heading);
+			if(obstacles.containsKey(this.position)){
+				this.position = null;
+			}
+		});
+		this.actions.put(Order.Backward, ()-> {
+			this.position = this.position.backward(this.heading);
+			if(obstacles.containsKey(this.position)){
+				this.position = null;
+			}
+		});
 	}
 
 	public void addObstacle(Obstacle obstacle) {
-		obstacles.put(obstacle.getPosition(),obstacle);
+		obstacles.put(obstacle.getPosition(), obstacle);
 	}
 
 	public Heading heading(){
@@ -52,13 +69,20 @@ public class Rover {
 				map(s->Order.of(s)).filter(order -> order != null));
 	}
 
+	private void go(Stream<Order> orders){
+		orders.forEach(o-> {
+			if(this.position != null) actions.get(o).execute();
+		});
+		if(this.position == null){
+			System.out.println("hola");
+			this.position = this.originalPosition;
+			this.heading = this.originalHeading;
+		}
+	}
+
 	@FunctionalInterface
 	public interface Action {
 		void execute();
-	}
-
-	private void go(Stream<Order> orders){
-		orders.forEach(o->actions.get(o).execute());
 	}
 
 	public static class Position {
@@ -104,6 +128,11 @@ public class Rover {
 
 		private boolean isSameClass(Object object) {
 			return object != null && object.getClass() == Position.class;
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(x, y);
 		}
 
 	}
