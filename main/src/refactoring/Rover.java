@@ -5,60 +5,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
+import lombok.Getter;
 
+@Getter
 public class Rover {
-	private Heading heading;
-	private Heading originalHeading;
-	private String facing;
-	private Position position;
-	private Position originalPosition;
+	private ViewPoint viewPoint;
 	private Map<Order, Action> actions = new HashMap<>();
-	private Map<Position, Obstacle> obstacles = new HashMap<>();
-
-	public Rover(String facing, int x, int y) {
-		this.facing = facing;
-		this.heading = Heading.of(facing);
-		this.position = new Position(x, y);
-		this.originalPosition = new Position(x, y);
-		this.originalHeading = Heading.of(facing);
+	{
+		this.actions.put(Order.Left, ViewPoint::turnLeft);
+		this.actions.put(Order.Right, ViewPoint::turnRight);
+		this.actions.put(Order.Forward, ViewPoint::forward);
+		this.actions.put(Order.Backward, ViewPoint::backward);
 	}
 
-	public Rover(Heading heading, int x, int y) {
-		this(heading, new Position(x, y));
-	}
-
-	public Rover(Heading heading, Position position) {
-		this.heading = heading;
-		this.position = position;
-		this.originalHeading = heading;
-		this.originalPosition = position;
-		this.actions.put(Order.Left, ()-> this.heading = this.heading.turnLeft());
-		this.actions.put(Order.Right, ()-> this.heading = this.heading.turnRight());
-		this.actions.put(Order.Forward, ()-> {
-			this.position = this.position.forward(this.heading);
-			if(obstacles.containsKey(this.position)){
-				this.position = null;
-			}
-		});
-		this.actions.put(Order.Backward, ()-> {
-			this.position = this.position.backward(this.heading);
-			if(obstacles.containsKey(this.position)){
-				this.position = null;
-			}
-		});
-	}
-
-	public void addObstacle(Obstacle obstacle) {
-		obstacles.put(obstacle.getPosition(), obstacle);
-	}
-
-	public Heading heading(){
-		return this.heading;
-	}
-
-	public Position position(){
-		return this.position;
-	}
+	public Rover(ViewPoint viewPoint){ this.viewPoint = viewPoint; }
 
 	public void go(Order... orders){
 		go(Arrays.stream(orders));
@@ -66,75 +26,21 @@ public class Rover {
 
 	public void go(String instructions){
 		go(Arrays.stream(instructions.split("")).
-				map(s->Order.of(s)).filter(order -> order != null));
+				map(Order::of).filter(Objects::nonNull));
 	}
 
-	private void go(Stream<Order> orders){
-		orders.forEach(o-> {
-			if(this.position != null) actions.get(o).execute();
-		});
-		if(this.position == null){
-			System.out.println("hola");
-			this.position = this.originalPosition;
-			this.heading = this.originalHeading;
-		}
+	private ViewPoint go(Stream<Order> ordersStream){
+		return ordersStream.filter(Objects::nonNull).reduce(viewPoint, this::execute, (V1, V2) -> null);
+	}
+
+	private ViewPoint execute(ViewPoint viewPoint, Order order){
+		if(viewPoint == null) return null;
+		return actions.get(order).execute(viewPoint);
 	}
 
 	@FunctionalInterface
 	public interface Action {
-		void execute();
-	}
-
-	public static class Position {
-		private final int x;
-		private final int y;
-
-		public Position(int x, int y) {
-			this.x = x;
-			this.y = y;
-		}
-
-		public Position forward(Heading heading) {
-			return move(heading,1);
-		}
-
-		public Position backward(Heading heading) {
-			return move(heading, -1);
-		}
-
-		public Position move(Heading heading, int i) {
-			switch(heading){
-				case North:
-					return new Position(this.x,this.y+i);
-				case East:
-					return new Position(this.x+i,this.y);
-				case South:
-					return new Position(this.x,this.y-i);
-				case West:
-					return new Position(this.x-i,this.y);
-				default:
-					return null;
-			}
-		}
-
-		@Override
-		public boolean equals(Object object) {
-			return isSameClass(object) && equals((Position) object);
-		}
-
-		private boolean equals(Position position) {
-			return position == this || (x == position.x && y == position.y);
-		}
-
-		private boolean isSameClass(Object object) {
-			return object != null && object.getClass() == Position.class;
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hash(x, y);
-		}
-
+		ViewPoint execute(ViewPoint viewPoint);
 	}
 
 	public enum Order {
@@ -150,48 +56,6 @@ public class Rover {
 			if (label == 'L') return Left;
 			if (label == 'R') return Right;
 			return null;
-		}
-	}
-
-	public enum Heading {
-		North, East, South, West;
-
-		public static Heading of(String label) {
-			return of(label.charAt(0));
-		}
-
-		public static Heading of(char label) {
-			if (label == 'N') return North;
-			if (label == 'S') return South;
-			if (label == 'W') return West;
-			if (label == 'E') return East;
-			return null;
-		}
-
-		public Heading turnRight() {
-			return values()[add(+1)];
-		}
-
-		public Heading turnLeft() {
-			return values()[add(-1)];
-		}
-
-		private int add(int offset) {
-			return (this.ordinal() + offset + values().length) % values().length;
-		}
-
-	}
-
-	public static class Obstacle {
-
-		private final Position position;
-
-		public Obstacle(Position position) {
-			this.position = position;
-		}
-
-		public Position getPosition() {
-			return position;
 		}
 	}
 

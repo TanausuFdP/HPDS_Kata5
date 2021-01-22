@@ -5,5 +5,4 @@ public interface ViewPoint {
     ViewPoint backward();
     ViewPoint turnLeft();
     ViewPoint turnRight();
-
 }
