@@ -22,12 +22,12 @@ public class CameraViewPoint implements ViewPoint {
     @Override
     public ViewPoint turnLeft() {
         camera.turnLeft(90);
-        return this;
+        return new CameraViewPoint(camera, imageProcessor);
     }
 
     @Override
     public ViewPoint turnRight() {
         camera.turnRight(90);
-        return this;
+        return new CameraViewPoint(camera, imageProcessor);
     }
 }
